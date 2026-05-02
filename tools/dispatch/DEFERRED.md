@@ -3,12 +3,13 @@
 Items surfaced by the meta-critique on 2026-05-01 (a sub-agent
 critiqued the dispatch DSL while playing by its rules; full
 return preserved in conversation history). The act-tonight bugs
-landed in commit `62294c9`. Everything below is structural —
-worth a conversation before committing.
+landed in commit `62294c9`.
 
-The items are roughly ordered by smallest-to-largest scope.
+**Update 2026-05-02:** items 1, 2, and 3 below have landed.
+Items 4, 5, and 6 remain deferred. The items are roughly
+ordered by smallest-to-largest scope.
 
-## 1. `--read-only` flag
+## 1. `--read-only` flag — LANDED 2026-05-02
 
 **Surfaced by:** meta-critique. Currently "do not edit anything"
 gets fished out of free-form `--task` text.
@@ -27,7 +28,7 @@ dispatches today; it's a recurring pattern, not a one-off.
 
 **Dependencies:** none. Independent change. ~15 minutes.
 
-## 2. `IF: none-this-time` safety valve
+## 2. `IF: none-this-time` safety valve — LANDED 2026-05-02
 
 **Surfaced by:** meta-critique. The "REQUIRED — even if small"
 framing risks filler IFs ("IF the file paths had been clickable")
@@ -53,7 +54,7 @@ sibling, the `REPORT_BACK_TEMPLATE`. Maybe a parser-side update
 to `parse_return.py` so `if_easier: "none-this-time"` doesn't
 trip the missing-IF exit-code-3. ~20 minutes.
 
-## 3. README honesty pass — "advisory, not enforced"
+## 3. README honesty pass — "advisory, not enforced" — LANDED 2026-05-02
 
 **Surfaced by:** meta-critique. The README claims "machine-
 checked grammar" but nothing actually forces the orchestrator

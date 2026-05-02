@@ -27,6 +27,7 @@ DISPATCH_SECTIONS = {
     "task": "## Task",
     "files": "## Files in scope",
     "conformance": "## Validation requirement",
+    "read_only": "## Read-only",
     "bash_discipline": "## Bash discipline",
     "report_back": "## Report-back contract",
 }
@@ -54,14 +55,24 @@ Reply with these fields, each on its own line, in this order:
 - Validation: <output of any tests/checks run, or "none">
 - IF: I could have done this more easily IF... <REQUIRED — name the
   single biggest friction you hit, even if small. Tooling gap, doc
-  ambiguity, missing context, naming collision — any axis. Do NOT
-  omit this field.>
+  ambiguity, missing context, naming collision — any axis. If you
+  genuinely hit no friction worth naming, write
+  "IF: none-this-time — <one-line why nothing surfaced>"; that
+  satisfies the requirement without forcing fabrication. Do NOT
+  omit the field entirely.>
 - Out-of-scope: <anything you noticed but did not act on, or "none">"""
 
 CONFORMANCE_TEMPLATE = """\
 After implementation, run `ops/check-conformance` from the repo root
 and include the green/red result in the Validation field. Do not
 report success without running it."""
+
+READ_ONLY_TEMPLATE = """\
+This task is **read-only**. Do not edit any files. Your "Files
+changed" field must be "none". If you find that the task as
+described requires edits to complete, stop and report status
+"blocked" with an explanation in your IF — do not proceed with
+edits."""
 
 BASH_DISCIPLINE_TEMPLATE = """\
 **Bash discipline (strict — every command you run lands in front of the

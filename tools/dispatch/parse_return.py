@@ -80,6 +80,11 @@ def main():
         "--file", default=None,
         help="Path to a file containing the reply (default: read from stdin).",
     )
+    parser.add_argument(
+        "--read-only", action="store_true",
+        help="The dispatch was read-only. Warn if Files changed is non-empty "
+             "(the agent edited despite the prohibition).",
+    )
     args = parser.parse_args()
 
     if args.file:
@@ -90,10 +95,20 @@ def main():
 
     fields = parse_return(text)
 
-    missing = [k for k in RETURN_REQUIRED if not fields.get(k)]
+    # "Missing" means the field key wasn't present in the input at all.
+    # An explicit "none" answer (which post-processes to "" or []) is a
+    # valid completion — it satisfies the slot.
+    missing = [k for k in RETURN_REQUIRED if k not in fields]
     if missing:
         print(
             f"parse_return.py: missing required field(s): {', '.join(sorted(missing))}",
+            file=sys.stderr,
+        )
+
+    if args.read_only and fields.get("files_changed"):
+        print(
+            f"parse_return.py: read-only dispatch but Files changed is non-empty: "
+            f"{fields['files_changed']!r}",
             file=sys.stderr,
         )
 
@@ -102,6 +117,9 @@ def main():
     # IF is load-bearing — exit non-zero if absent so callers can branch on it.
     if "if_easier" in missing:
         sys.exit(3)
+    # Read-only violation is also exit non-zero (different code).
+    if args.read_only and fields.get("files_changed"):
+        sys.exit(4)
 
 
 if __name__ == "__main__":
