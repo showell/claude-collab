@@ -7,7 +7,9 @@ field — especially the IF, which is the orchestrator's only
 window into sub-agent friction.
 
 Output is JSON to stdout. Missing-required-field warnings go
-to stderr; the script exits non-zero if the IF is missing.
+to stderr; the script exits non-zero (code 3) if any required
+field is missing, and code 4 if a read-only dispatch returned
+non-empty Files changed.
 
 Usage:
 
@@ -114,8 +116,8 @@ def main():
 
     print(json.dumps(fields, indent=2))
 
-    # IF is load-bearing — exit non-zero if absent so callers can branch on it.
-    if "if_easier" in missing:
+    # Any missing required field is non-zero exit so callers can branch on it.
+    if missing:
         sys.exit(3)
     # Read-only violation is also exit non-zero (different code).
     if args.read_only and fields.get("files_changed"):

@@ -18,7 +18,7 @@ invoke the script gets the discipline applied uniformly.
 
 ## Why
 
-Two rules in particular were prose-only and easy to forget:
+Several rules were prose-only and easy to forget:
 
 - **Anchor every dispatch in recent churn** — a 1–3 sentence
   hint about what just landed, so the cold sub-agent can tell
@@ -29,29 +29,35 @@ Two rules in particular were prose-only and easy to forget:
   hit silently. (If no friction surfaced, the agent writes
   `IF: none-this-time — <one-line why>` to satisfy the slot
   without forcing fabrication.)
+- **Read-only intent stated explicitly** — when a task is an
+  audit, the dispatch should say so up-front so the agent
+  doesn't reach for Edit on impulse, and the parser can flag
+  a violation if files were changed anyway.
 
 The orchestrator composes dispatches by hand. If a rule is
 forgotten, nothing fails loudly — the dispatch just silently
 omits the slot, and future cross-session signal is lost.
 
 `dispatch.py` refuses to emit unless the required slots are
-present. `parse_return.py` exits non-zero if the IF is absent.
-Closure on a real variance surface (the orchestrator's per-call
-discipline), not a stylistic linter.
+present. `parse_return.py` exits non-zero (code 3) if any
+required return field is missing, and code 4 if a read-only
+dispatch returned non-empty Files changed. Closure on a real
+variance surface (the orchestrator's per-call discipline),
+not a stylistic linter.
 
 ## Files
 
 - `dispatch_dsl.py` — shared grammar (slot names, required-vs-
-  optional, fixed text of the report-back contract). One
-  source of truth for the section headers + required-field
-  invariants; both scripts import it.
+  optional, fixed templates for each section). One source of
+  truth for the section headers + required-field invariants;
+  both scripts import it.
 - `dispatch.py` — emitter. Takes structured CLI args, emits
   the dispatch text. Refuses to emit if `--task` or `--churn`
   is empty.
 - `parse_return.py` — extractor. Reads a sub-agent's reply
   (stdin or `--file`), pulls out the structured fields,
-  emits JSON. Warns + exits non-zero if any required field
-  (status, files-changed, IF) is missing.
+  emits JSON. Warns + exits non-zero (code 3) if any required
+  field is missing; code 4 on a read-only-violation.
 
 ## Usage
 

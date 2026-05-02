@@ -18,9 +18,10 @@ gets fished out of free-form `--task` text.
 set:
 
 - `dispatch.py` refuses `--conformance` (mutually exclusive).
-- `parse_return.py` warns if `Files changed` is non-empty.
-- The dispatch text gains an explicit "read-only — do not edit
-  any files" line in the report-back area.
+- `parse_return.py` warns + exits non-zero (code 4) if `Files
+  changed` is non-empty.
+- The dispatch text gains an explicit `## Read-only` section
+  before bash discipline, naming the prohibition.
 
 **Why this is right:** cheap invariant, real catch. The
 read-only constraint has shown up in two of the three test
@@ -50,9 +51,10 @@ there gets you noise. Justified-absence keeps the consideration
 honest.
 
 **Dependencies:** small text change to `BASH_DISCIPLINE_TEMPLATE`'s
-sibling, the `REPORT_BACK_TEMPLATE`. Maybe a parser-side update
-to `parse_return.py` so `if_easier: "none-this-time"` doesn't
-trip the missing-IF exit-code-3. ~20 minutes.
+sibling, the `REPORT_BACK_TEMPLATE`. (No parser change needed —
+any non-empty IF, including `none-this-time`, populates the
+`if_easier` field and passes the missing-required check.)
+~20 minutes.
 
 ## 3. README honesty pass — "advisory, not enforced" — LANDED 2026-05-02
 

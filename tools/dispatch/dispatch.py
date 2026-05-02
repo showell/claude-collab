@@ -10,15 +10,8 @@ surface between "rules the orchestrator should remember" and
 "rules the orchestrator actually applied." Required-by-script
 beats required-by-discipline.
 
-Usage:
-
-    python3 dispatch.py \\
-        --task "Refactor X to use Y" \\
-        --churn "Z just landed; W docs not yet swept" \\
-        --files "path/to/file1.py,path/to/file2.py" \\
-        --conformance
-
-Emits the dispatch text to stdout. Pipe into the Agent prompt.
+See `python3 dispatch.py --help` for the flag list and
+README.md for worked examples.
 """
 
 import argparse

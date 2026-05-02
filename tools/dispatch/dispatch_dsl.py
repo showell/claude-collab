@@ -3,17 +3,9 @@ Sub-agent dispatch DSL — shared grammar for dispatch + return.
 
 The grammar lives in one place so dispatch.py (emitter) and
 parse_return.py (extractor) agree on slot names, required-vs-
-optional, and section ordering.
-
-The DSL is two grammars wired together:
-
-  DISPATCH  — what the orchestrator sends to the sub-agent.
-              Required slots: churn, task, report_back.
-              Optional slots: files, conformance.
-
-  RETURN    — what the sub-agent sends back.
-              Required fields: status, files_changed, if_easier.
-              Optional fields: validation, out_of_scope.
+optional, and section ordering. See `DISPATCH_SECTIONS`,
+`RETURN_FIELDS`, `DISPATCH_REQUIRED`, and `RETURN_REQUIRED`
+below for the canonical lists — they are the source of truth.
 
 The IF field is required-and-load-bearing — it is the
 orchestrator's only window into sub-agent friction. Both
