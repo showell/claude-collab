@@ -20,28 +20,38 @@ import sys
 from dispatch_dsl import (
     DISPATCH_SECTIONS,
     DISPATCH_REQUIRED,
-    REPORT_BACK_TEMPLATE,
+    REPORT_BACK_TEMPLATES,
     CONFORMANCE_TEMPLATE,
     BASH_DISCIPLINE_TEMPLATE,
     READ_ONLY_TEMPLATE,
+    MODES,
+    DEFAULT_MODE,
 )
 
 
-def compose_dispatch(*, task, churn, files=None, conformance=False, read_only=False):
+def compose_dispatch(*, task, churn, files=None, conformance=False, read_only=False, mode=DEFAULT_MODE):
     """Compose a dispatch prompt from structured inputs.
 
-    Raises ValueError if any required slot is empty, or if mutually-
-    exclusive flags are set together.
+    Raises ValueError if any required slot is empty, if mode is unknown,
+    or if mutually-exclusive flags are set together.
     """
     inputs = {"task": task, "churn": churn}
     missing = [k for k in DISPATCH_REQUIRED if not inputs.get(k, "").strip()]
     if missing:
         raise ValueError(f"missing required slot(s): {', '.join(sorted(missing))}")
 
+    if mode not in MODES:
+        raise ValueError(f"unknown mode {mode!r}; valid: {', '.join(MODES)}")
+
     if read_only and conformance:
         raise ValueError(
             "--read-only and --conformance are mutually exclusive: a read-only "
             "task does not modify code, so there's nothing for conformance to verify."
+        )
+
+    if conformance and mode != "build":
+        raise ValueError(
+            f"--conformance requires --mode build; mode {mode!r} has no Validation field."
         )
 
     blocks = []
@@ -75,7 +85,7 @@ def compose_dispatch(*, task, churn, files=None, conformance=False, read_only=Fa
     blocks.append("")
 
     blocks.append(DISPATCH_SECTIONS["report_back"])
-    blocks.append(REPORT_BACK_TEMPLATE)
+    blocks.append(REPORT_BACK_TEMPLATES[mode])
 
     return "\n".join(blocks)
 
@@ -95,8 +105,14 @@ def main():
         help="Comma-separated list of files in scope (optional).",
     )
     parser.add_argument(
+        "--mode", default=DEFAULT_MODE, choices=MODES,
+        help=f"Task shape; controls the report-back contract. "
+             f"(default: {DEFAULT_MODE})",
+    )
+    parser.add_argument(
         "--conformance", action="store_true",
-        help="Require the agent to run ops/check-conformance and report.",
+        help="Require the agent to run ops/check-conformance and report. "
+             "Build mode only.",
     )
     parser.add_argument(
         "--read-only", action="store_true",
@@ -114,6 +130,7 @@ def main():
             files=files,
             conformance=args.conformance,
             read_only=args.read_only,
+            mode=args.mode,
         )
     except ValueError as e:
         print(f"dispatch.py: {e}", file=sys.stderr)

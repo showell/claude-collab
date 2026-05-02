@@ -24,35 +24,73 @@ DISPATCH_SECTIONS = {
     "report_back": "## Report-back contract",
 }
 
-RETURN_FIELDS = {
-    "status": "Status",            # required: success | partial | blocked
-    "files_changed": "Files changed",  # required
-    "validation": "Validation",     # optional
-    "if_easier": "IF",              # required: "I could have done this more easily IF..."
-    "out_of_scope": "Out-of-scope",  # optional
+# Field-label maps and required-field sets are mode-keyed. The label
+# map for a mode lists every field the parser will recognize for that
+# mode, in the order the report-back contract presents them. The
+# required set lists which of those must be present (parser exits
+# non-zero if any are missing).
+
+RETURN_FIELDS_BY_MODE = {
+    "build": {
+        "status": "Status",            # required: success | partial | blocked
+        "files_changed": "Files changed",  # required
+        "validation": "Validation",     # optional
+        "if_easier": "IF",              # required: friction signal
+        "out_of_scope": "Out-of-scope",  # optional
+    },
+    "critique": {
+        "status": "Status",            # required: success | partial | blocked
+        "findings": "Findings",        # required: prose deliverable
+        "if_easier": "IF",              # required: friction signal
+        "out_of_scope": "Out-of-scope",  # optional
+    },
 }
+
+RETURN_REQUIRED_BY_MODE = {
+    "build": {"status", "files_changed", "if_easier"},
+    "critique": {"status", "findings", "if_easier"},
+}
+
+MODES = tuple(RETURN_FIELDS_BY_MODE.keys())
+DEFAULT_MODE = "build"
 
 # ── Required-slot enforcement ──
 
 DISPATCH_REQUIRED = {"churn", "task"}
-RETURN_REQUIRED = {"status", "files_changed", "if_easier"}
 
-# ── The fixed text of the report-back contract ──
+# ── The fixed text of the report-back contract (per mode) ──
 
-REPORT_BACK_TEMPLATE = """\
-Reply with these fields, each on its own line, in this order:
-
-- Status: success | partial | blocked
-- Files changed: <comma-separated list, or "none">
-- Validation: <output of any tests/checks run, or "none">
-- IF: I could have done this more easily IF... <REQUIRED — name the
+_IF_BLURB = """- IF: I could have done this more easily IF... <REQUIRED — name the
   single biggest friction you hit, even if small. Tooling gap, doc
   ambiguity, missing context, naming collision — any axis. If you
   genuinely hit no friction worth naming, write
   "IF: none-this-time — <one-line why nothing surfaced>"; that
   satisfies the requirement without forcing fabrication. Do NOT
-  omit the field entirely.>
-- Out-of-scope: <anything you noticed but did not act on, or "none">"""
+  omit the field entirely.>"""
+
+_OOS_BLURB = '- Out-of-scope: <anything you noticed but did not act on, or "none">'
+
+REPORT_BACK_TEMPLATES = {
+    "build": f"""\
+Reply with these fields, each on its own line, in this order:
+
+- Status: success | partial | blocked
+- Files changed: <comma-separated list, or "none">
+- Validation: <output of any tests/checks run, or "none">
+{_IF_BLURB}
+{_OOS_BLURB}""",
+    "critique": f"""\
+Reply with these fields, each on its own line, in this order:
+
+- Status: success | partial | blocked
+- Findings: <numbered list of findings. Each item is a one-line claim
+  prefixed by severity (high/med/low); multi-paragraph elaboration may
+  follow under each item — the parser preserves it. The Findings field
+  spans every line until the IF field begins, so write as much prose
+  as the work warrants.>
+{_IF_BLURB}
+{_OOS_BLURB}""",
+}
 
 CONFORMANCE_TEMPLATE = """\
 After implementation, run `ops/check-conformance` from the repo root

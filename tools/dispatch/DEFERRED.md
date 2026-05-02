@@ -6,8 +6,9 @@ return preserved in conversation history). The act-tonight bugs
 landed in commit `62294c9`.
 
 **Update 2026-05-02:** items 1, 2, and 3 below have landed.
-Items 4, 5, and 6 remain deferred. The items are roughly
-ordered by smallest-to-largest scope.
+Item 4 is in progress (build + critique modes landed; discovery
++ sweep deferred). Items 5 and 6 remain deferred. The items
+are roughly ordered by smallest-to-largest scope.
 
 ## 1. `--read-only` flag — LANDED 2026-05-02
 
@@ -77,7 +78,7 @@ hand-composed). Naming the surface is the honest move.
 
 **Dependencies:** none. README edit. ~5 minutes.
 
-## 4. `mode` slot — build / critique / discovery / sweep
+## 4. `mode` slot — build / critique / discovery / sweep — IN PROGRESS
 
 **Surfaced by:** meta-critique (their strongest structural
 critique). The current report-back contract is shaped for build
@@ -96,22 +97,19 @@ report-back contract varies by mode:
 - `discovery`: Status, Inventory, IF, Out-of-scope
 - `sweep`: Status, Drift findings, Files patched, IF, Out-of-scope
 
-`parse_return.py` would dispatch on the mode and apply the right
+`parse_return.py` dispatches on the mode and applies the right
 field grammar.
+
+**Status 2026-05-02:** Build incrementally. `build` and
+`critique` modes landed in this commit. `discovery` and `sweep`
+remain unstarted — add them when a real task surfaces the need,
+not on speculation.
 
 **Why this is right:** the contract is currently shaped for one
 of four task types. The meta-critique agent's actual deliverable
 (prose) had no home in the contract. The cleanest fix is making
 the grammar mode-conditional rather than try to invent a slot
 that fits all four shapes.
-
-**Why it's deferred:** real expansion in scope. Multiple
-grammars, mode-specific parsers, more code. Worth doing if we
-believe the dispatch DSL has legs beyond the next few sessions;
-not worth doing if we expect to abandon or replace it. Probably
-the right move, but the conversation about it deserves time.
-
-**Dependencies:** ties to #5. ~1-2 hours.
 
 ## 5. Mode-specific deliverable slot
 

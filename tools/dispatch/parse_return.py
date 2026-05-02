@@ -22,18 +22,25 @@ import json
 import re
 import sys
 
-from dispatch_dsl import RETURN_FIELDS, RETURN_REQUIRED
+from dispatch_dsl import (
+    RETURN_FIELDS_BY_MODE,
+    RETURN_REQUIRED_BY_MODE,
+    MODES,
+    DEFAULT_MODE,
+)
 
 
-def parse_return(text):
+def parse_return(text, *, mode=DEFAULT_MODE):
     """Extract structured fields from a sub-agent's reply.
 
     Returns a dict mapping field-key -> value (string or list).
     Unparsed input is ignored; the parser walks the text looking
-    for `<Field>:` prefixes and captures each field's value
-    (which may span lines until the next field begins).
+    for `<Field>:` prefixes (taken from the mode's field map) and
+    captures each field's value (which may span lines until the
+    next field begins).
     """
-    field_labels = {label: key for key, label in RETURN_FIELDS.items()}
+    return_fields = RETURN_FIELDS_BY_MODE[mode]
+    field_labels = {label: key for key, label in return_fields.items()}
     label_pattern = "|".join(re.escape(l) for l in field_labels)
     field_re = re.compile(rf"^\s*[-*]?\s*({label_pattern})\s*:\s*(.*)$", re.IGNORECASE)
 
@@ -83,6 +90,11 @@ def main():
         help="Path to a file containing the reply (default: read from stdin).",
     )
     parser.add_argument(
+        "--mode", default=DEFAULT_MODE, choices=MODES,
+        help=f"Task mode (must match the dispatch's --mode). Selects which "
+             f"field grammar to apply. (default: {DEFAULT_MODE})",
+    )
+    parser.add_argument(
         "--read-only", action="store_true",
         help="The dispatch was read-only. Warn if Files changed is non-empty "
              "(the agent edited despite the prohibition).",
@@ -95,12 +107,12 @@ def main():
     else:
         text = sys.stdin.read()
 
-    fields = parse_return(text)
+    fields = parse_return(text, mode=args.mode)
 
     # "Missing" means the field key wasn't present in the input at all.
     # An explicit "none" answer (which post-processes to "" or []) is a
     # valid completion — it satisfies the slot.
-    missing = [k for k in RETURN_REQUIRED if k not in fields]
+    missing = [k for k in RETURN_REQUIRED_BY_MODE[args.mode] if k not in fields]
     if missing:
         print(
             f"parse_return.py: missing required field(s): {', '.join(sorted(missing))}",

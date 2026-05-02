@@ -59,9 +59,29 @@ not a stylistic linter.
   emits JSON. Warns + exits non-zero (code 3) if any required
   field is missing; code 4 on a read-only-violation.
 
+## Modes
+
+Different task shapes have different deliverables. The
+report-back contract is keyed by `--mode`:
+
+| Mode | Required return fields |
+|---|---|
+| `build` (default) | Status, Files changed, Validation, IF, Out-of-scope |
+| `critique` | Status, Findings, IF, Out-of-scope |
+
+Build mode is for "implement / refactor / fix" work — code
+edits + tests. Critique mode is for audits and reviews where
+the deliverable is prose findings, not code. Modes are added
+incrementally; `discovery` and `sweep` are likely future
+additions if their shapes prove distinct in practice.
+
+`parse_return.py` takes the same `--mode` flag and applies the
+matching field grammar; pass the value the dispatch was
+emitted with.
+
 ## Usage
 
-Compose a dispatch:
+Compose a build dispatch:
 
 ```
 python3 dispatch.py \
@@ -71,31 +91,36 @@ python3 dispatch.py \
     --conformance
 ```
 
-For read-only audits (no edits permitted):
+Compose a critique dispatch:
 
 ```
 python3 dispatch.py \
-    --task "Audit X for Y drift" \
-    --churn "..." \
+    --mode critique \
+    --task "Audit the v1 X engine for code quality and design" \
+    --churn "X engine landed yesterday in commit abc123" \
     --read-only
 ```
 
 `--read-only` and `--conformance` are mutually exclusive — a
 read-only task does not modify code, so there's nothing for
-conformance to verify. The script refuses both together.
+conformance to verify. `--conformance` further requires
+`--mode build`; other modes have no Validation field.
 
-Parse a return:
+Parse a return (pass the same `--mode` the dispatch used):
 
 ```
-cat reply.txt | python3 parse_return.py
+cat reply.txt | python3 parse_return.py --mode critique
 # or
-python3 parse_return.py --file reply.txt
+python3 parse_return.py --file reply.txt --mode build
 # or, if the dispatch was read-only:
 python3 parse_return.py --file reply.txt --read-only
 ```
 
 `--read-only` on the parser warns and exits non-zero (code 4)
 if the agent reported any files changed despite the prohibition.
+(Note: critique mode has no Files-changed field, so the
+read-only check is a no-op there — the prohibition is text-
+only, not parser-enforced.)
 
 ## What this is not
 
