@@ -129,12 +129,9 @@ mismatches as an explicit list.** You can't port cleanly while
 discovering mismatches mid-flight.
 
 If a language-pair handbook already exists (e.g.,
-`~/showell_repos/angry-gopher/games/lynrummy/tricks/TS_TO_GO.md`
-for the Go trick port;
-`~/showell_repos/angry-gopher/games/lynrummy/elm-port-docs/TS_TO_ELM.md`
-for the Elm model port), it IS the output of this step — use it
-and extend it. If not, this step produces one, placed near the
-target code.
+[`TS_TO_ELM.md`](./TS_TO_ELM.md) for TS → Elm), it IS the output
+of this step — use it and extend it. If not, this step produces
+one, placed near the target code.
 
 Categories to answer for the specific A→B pair:
 
@@ -403,8 +400,8 @@ become the port's idiom contract. Extend the list whenever the
 port surfaces a pattern worth naming.
 
 Existing pair handbooks:
-- **TS → Go:** `~/showell_repos/angry-gopher/games/lynrummy/tricks/TS_TO_GO.md`
-- **TS → Elm:** `~/showell_repos/angry-gopher/games/lynrummy/elm-port-docs/TS_TO_ELM.md`
+- **TS → Elm:** [`TS_TO_ELM.md`](./TS_TO_ELM.md) (frozen reference;
+  captured during the LynRummy TS → Elm port).
 
 ---
 
