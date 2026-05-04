@@ -169,10 +169,16 @@ BASH_DISCIPLINE_TEMPLATE = """\
 human as a permission prompt; needless prompts are spam):**
 
 - Do NOT prefix commands with `cd <dir> && ...`. The cwd is already
-  set; chained `cd` triggers an extra approval gate. If you genuinely
-  need to run from a different dir, use the tool that supports it
-  (`git -C <dir>`, `python -C ...`, etc.) — but in nearly all cases
-  the cwd is already correct.
+  set; chained `cd` triggers an extra approval gate.
+- **For git: always use `git -C <path> <subcommand>` when targeting a
+  repo other than the cwd. NEVER `cd <path> && git ...`.** This is
+  the most common spot where the rule above gets violated. Examples:
+  `git -C /home/.../other-repo status`, `git -C /home/.../other-repo
+  log -5`. The `-C` flag is git's built-in dir-targeting; use it.
+- For other tools that need to run from a different dir, use the
+  tool's own dir-targeting flag (`make -C ...`, `python -C ...` for
+  scripts that support it). If no flag exists, surface in IF rather
+  than reaching for `cd && ...`.
 - Do NOT chain commands with `&&` or `;` when a single command would
   do. One command per Bash call.
 - Use `Read` for reading files, `Grep` for searching — NOT `cat`,
