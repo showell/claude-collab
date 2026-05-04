@@ -22,6 +22,8 @@ from dispatch_dsl import (
     DISPATCH_REQUIRED,
     REPORT_BACK_TEMPLATES,
     CONFORMANCE_TEMPLATE,
+    DOC_UPKEEP_TEMPLATE,
+    CODE_OWNERSHIP_TEMPLATE,
     BASH_DISCIPLINE_TEMPLATE,
     READ_ONLY_TEMPLATE,
     MODES,
@@ -29,11 +31,13 @@ from dispatch_dsl import (
 )
 
 
-def compose_dispatch(*, task, churn, files=None, conformance=False, read_only=False, mode=DEFAULT_MODE):
+def compose_dispatch(*, task, churn="", files=None, conformance=False, read_only=False, mode=DEFAULT_MODE):
     """Compose a dispatch prompt from structured inputs.
 
     Raises ValueError if any required slot is empty, if mode is unknown,
-    or if mutually-exclusive flags are set together.
+    or if mutually-exclusive flags are set together. `churn` is optional;
+    omit it (or pass empty) when no recent change directly affects the
+    task — the section is only emitted when truthy.
     """
     inputs = {"task": task, "churn": churn}
     missing = [k for k in DISPATCH_REQUIRED if not inputs.get(k, "").strip()]
@@ -42,6 +46,15 @@ def compose_dispatch(*, task, churn, files=None, conformance=False, read_only=Fa
 
     if mode not in MODES:
         raise ValueError(f"unknown mode {mode!r}; valid: {', '.join(MODES)}")
+
+    # Survey mode is read-only by definition: discovery work doesn't edit.
+    if mode == "survey":
+        if conformance:
+            raise ValueError(
+                "--conformance is not valid with --mode survey: surveys are "
+                "read-only by definition, so there's nothing for conformance to verify."
+            )
+        read_only = True
 
     if read_only and conformance:
         raise ValueError(
@@ -56,9 +69,10 @@ def compose_dispatch(*, task, churn, files=None, conformance=False, read_only=Fa
 
     blocks = []
 
-    blocks.append(DISPATCH_SECTIONS["churn"])
-    blocks.append(churn.strip())
-    blocks.append("")
+    if churn.strip():
+        blocks.append(DISPATCH_SECTIONS["churn"])
+        blocks.append(churn.strip())
+        blocks.append("")
 
     blocks.append(DISPATCH_SECTIONS["task"])
     blocks.append(task.strip())
@@ -73,6 +87,23 @@ def compose_dispatch(*, task, churn, files=None, conformance=False, read_only=Fa
     if conformance:
         blocks.append(DISPATCH_SECTIONS["conformance"])
         blocks.append(CONFORMANCE_TEMPLATE)
+        blocks.append("")
+
+    # Doc upkeep applies whenever the agent will be editing code (build
+    # mode, not read-only). Critique and survey are read-only deliverables;
+    # there's nothing to drift.
+    if mode == "build" and not read_only:
+        blocks.append(DISPATCH_SECTIONS["doc_upkeep"])
+        blocks.append(DOC_UPKEEP_TEMPLATE)
+        blocks.append("")
+
+    # Code ownership: same gate as doc_upkeep — only meaningful when the
+    # agent will be writing code. The principle is "default to exporting
+    # privates, not inlining copies" — surfaces a sub-agent reflex that
+    # produces drift if left implicit.
+    if mode == "build" and not read_only:
+        blocks.append(DISPATCH_SECTIONS["code_ownership"])
+        blocks.append(CODE_OWNERSHIP_TEMPLATE)
         blocks.append("")
 
     if read_only:
@@ -96,9 +127,11 @@ def main():
     )
     parser.add_argument("--task", required=True, help="The task brief.")
     parser.add_argument(
-        "--churn", required=True,
+        "--churn", default="",
         help="1-3 sentences naming what recently landed / what got ripped / "
-             "what the agent should treat as moving ground.",
+             "what the agent should treat as moving ground. Optional — "
+             "include only when recent change directly affects the task; "
+             "omit for steady-state work to avoid generic-orientation noise.",
     )
     parser.add_argument(
         "--files", default="",

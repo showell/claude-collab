@@ -20,9 +20,13 @@ invoke the script gets the discipline applied uniformly.
 
 Several rules were prose-only and easy to forget:
 
-- **Anchor every dispatch in recent churn** — a 1–3 sentence
-  hint about what just landed, so the cold sub-agent can tell
-  "this prose is stale" from "I don't get this yet."
+- **Anchor in recent churn when it's task-relevant** — a 1–3
+  sentence hint about what just landed in the surface the agent
+  is touching, so they can tell "this prose is stale" from "I
+  don't get this yet." Optional, not required: forcing a churn
+  slot on every dispatch produces generic-orientation noise when
+  no recent change actually affects the task. Include it when
+  the churn affects the work; omit it for steady-state tasks.
 - **Mandatory IF in every return** — every sub-agent must
   finish with `IF: I could have done this more easily IF...`,
   the orchestrator's only window into friction the sub-agent
@@ -33,17 +37,31 @@ Several rules were prose-only and easy to forget:
   audit, the dispatch should say so up-front so the agent
   doesn't reach for Edit on impulse, and the parser can flag
   a violation if files were changed anyway.
+- **Doc upkeep alongside code edits** — build-mode dispatches
+  remind the agent to update affected docs (READMEs, design
+  docs, top-of-file comments) as part of the same change.
+  Closing doc-drift inside the dispatch is cheaper than
+  queueing it as follow-up; deferred doc cleanup tends to be
+  forgotten.
+- **Code ownership** — sub-agents own every file in the repo,
+  not just the ones in `Files in scope`. When a needed helper
+  is private to another module, the default is to export it
+  (small, mechanical) and import — NOT to inline a copy as a
+  workaround. Inlining produces drift the orchestrator chases
+  later; punting (status `partial`, surface the question) is
+  also valid.
 
 The orchestrator composes dispatches by hand. If a rule is
 forgotten, nothing fails loudly — the dispatch just silently
 omits the slot, and future cross-session signal is lost.
 
-`dispatch.py` refuses to emit unless the required slots are
-present. `parse_return.py` exits non-zero (code 3) if any
-required return field is missing, and code 4 if a read-only
-dispatch returned non-empty Files changed. Closure on a real
-variance surface (the orchestrator's per-call discipline),
-not a stylistic linter.
+`dispatch.py` refuses to emit unless `--task` is present;
+`--churn` is optional and is only rendered when supplied.
+`parse_return.py` exits non-zero (code 3) if any required
+return field is missing, and code 4 if a read-only dispatch
+returned non-empty Files changed. Closure on a real variance
+surface (the orchestrator's per-call discipline), not a
+stylistic linter.
 
 ## Files
 
@@ -68,12 +86,23 @@ report-back contract is keyed by `--mode`:
 |---|---|
 | `build` (default) | Status, Files changed, Validation, IF, Out-of-scope |
 | `critique` | Status, Findings, IF, Out-of-scope |
+| `survey` | Status, Inventory, Open questions, IF, Out-of-scope |
 
 Build mode is for "implement / refactor / fix" work — code
 edits + tests. Critique mode is for audits and reviews where
-the deliverable is prose findings, not code. Modes are added
-incrementally; `discovery` and `sweep` are likely future
-additions if their shapes prove distinct in practice.
+the deliverable is prose findings, not code. Survey mode is
+for discovery / mapping / orientation work where the deliverable
+is an Inventory (what exists, where, how it's shaped) plus a
+separate Open-questions field for unresolved subject-ambiguities.
+Survey is read-only by definition — passing `--mode survey`
+auto-applies the read-only template and rejects `--conformance`.
+
+`survey` vs `critique`: critique evaluates ("is this good?"),
+survey describes ("what is this?"). Different question, different
+deliverable. `Open questions` (survey) and `IF` (all modes) are
+also deliberately separate: open questions are unresolved
+ambiguities about the *subject*; IF is friction in doing the
+*work*. Sweep is still likely a future addition.
 
 `parse_return.py` takes the same `--mode` flag and applies the
 matching field grammar; pass the value the dispatch was
@@ -99,6 +128,15 @@ python3 dispatch.py \
     --task "Audit the v1 X engine for code quality and design" \
     --churn "X engine landed yesterday in commit abc123" \
     --read-only
+```
+
+Compose a survey dispatch (read-only is auto-applied):
+
+```
+python3 dispatch.py \
+    --mode survey \
+    --task "Inventory the puzzle catalog: schema, fields, sort/dedup keys" \
+    --churn "Python mining script retired today; catalog is currently frozen JSON"
 ```
 
 `--read-only` and `--conformance` are mutually exclusive — a
