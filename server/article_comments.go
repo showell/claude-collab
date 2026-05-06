@@ -31,9 +31,10 @@ type articleCommentFile struct {
 
 // resolveArticlePath accepts the full URL path of an essay
 // and returns the filesystem path, refusing traversal
-// attempts. Four shapes:
+// attempts. Five shapes:
 //
 //	/essays/<name>.md
+//	/claude-claude/<name>.md
 //	/users/steve/<subdir>/<name>.md
 //	/steve/<name>.md
 //	/steve/<subdir>/<name>.md
@@ -43,6 +44,9 @@ func resolveArticlePath(article string) (string, bool) {
 	case strings.HasPrefix(article, "/essays/"):
 		dir = EssaysDir
 		name = strings.TrimPrefix(article, "/essays/")
+	case strings.HasPrefix(article, "/claude-claude/"):
+		dir = ClaudeClaudeDir
+		name = strings.TrimPrefix(article, "/claude-claude/")
 	case strings.HasPrefix(article, "/steve/"):
 		rest := strings.TrimPrefix(article, "/steve/")
 		parts := strings.SplitN(rest, "/", 2)
